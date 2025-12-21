@@ -22,7 +22,7 @@ http://localhost:8001/redoc # API Docs (ReDoc)
 
 1. Клонировать + .env
 git clone https://github.com/moskalevgeorge83-sys/my_twitter_clone.git
-cd twitter-clone
+cd my_twitter_clone
 cp .env.example .env
 
 2. Запустить (backend + postgres)
