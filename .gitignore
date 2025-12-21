@@ -1,0 +1,49 @@
+# ОС и IDE
+__pycache__/
+*.py[cod]
+*.log
+*.sqlite3
+*test*.db
+.env
+.env.*
+.idea/
+.vscode/
+.DS_Store
+.pytest_cache/
+
+# Python
+*.egg-info/
+*.egg
+dist/
+build/
+venv/
+
+# Backend
+backend/tests/__pycache__/
+migrations/versions/*.pyc
+media/
+test_twitter.db
+
+# Docker
+*.pid
+*.bak
+docker-data/
+.db_data/
+
+# Node / Vue / Frontend build
+node_modules/
+dist/
+*.map
+frontend/dist/
+frontend/node_modules/
+
+# IDE
+.venv/
+
+# Coverage
+htmlcov/
+.coverage
+*.cover
+.coverage.*
+coverage.xml
+coverage.json
