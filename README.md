@@ -8,6 +8,7 @@ FastAPI + PostgreSQL полноценный Twitter-клон. Лента, follow
 [![Python](https://img.shields.io/badge/Python-3.11-blueviolet)](https://python.org)
 [![Tests](https://img.shields.io/badge/Pytest-100%25-brightgreen)](https://pytest.org)
 [![Code style](https://img.shields.io/badge/code%20style-black-black)](https://black.readthedocs.io)
+[![CI](https://github.com/moskalevgeorge83-sys/my_twitter_clone/actions/workflows/ci.yml/badge.svg)](https://github.com/moskalevgeorge83-sys/my_twitter_clone/actions)
 
 ## ✨ Full Project
 
