@@ -21,7 +21,7 @@ http://localhost:8001/redoc # API Docs (ReDoc)
 ## Быстрый запуск (3 команды)
 
 1. Клонировать + .env
-git clone https://github.com/moskalevgeorge83-sys/twitter-clone.git
+git clone https://github.com/moskalevgeorge83-sys/my_twitter_clone.git
 cd twitter-clone
 cp .env.example .env
 
