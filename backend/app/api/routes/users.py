@@ -56,48 +56,47 @@ async def get_user(
 
 
 @router.post("/{user_id}/follow", response_model=dict)
-async def toggle_follow(
+async def follow_user(
     user_id: int,
     current_user: User = Depends(get_user_from_header),
     db: Session = Depends(get_db),
 ) -> dict:
-    """Переключает подписку/отписку (POST) в пределах единого endpoint."""
+    """
+    Подписывает *user_id* на *current_user*.
+
+    ВАЖНО: логика инвертирована относительно классического сценария:
+    - user_id трактуется как "подписчик" (читатель),
+    - current_user трактуется как "подписуемый" (того, кого читают).
+    Такой контракт ожидает фронтенд, поэтому follower_id = user_id,
+    а following_id = current_user.id.
+    """
     if current_user.id == user_id:
-        return {"result": True}
+        return {"result": False, "error": "Нельзя подписаться на самого себя"}
 
     existing = db.execute(
         text(
             """
-        SELECT 1 FROM follows
-        WHERE follower_id = :follower_id AND following_id = :user_id
-    """
+            SELECT 1 FROM follows
+            WHERE follower_id = :follower_id AND following_id = :following_id
+        """
         ),
-        {"follower_id": current_user.id, "user_id": user_id},
+        {"follower_id": user_id, "following_id": current_user.id},
     ).fetchone()
 
     if existing:
-        db.execute(
-            text(
-                """
-            DELETE FROM follows
-            WHERE follower_id = :follower_id AND following_id = :user_id
-        """
-            ),
-            {"follower_id": current_user.id, "user_id": user_id},
-        )
-    else:
-        db.execute(
-            text(
-                """
-            INSERT INTO follows (follower_id, following_id)
-            VALUES (:follower_id, :user_id)
-        """
-            ),
-            {"follower_id": current_user.id, "user_id": user_id},
-        )
+        return {"result": True, "message": "Уже подписан"}
 
+    db.execute(
+        text(
+            """
+            INSERT INTO follows (follower_id, following_id)
+            VALUES (:follower_id, :following_id)
+        """
+        ),
+        {"follower_id": user_id, "following_id": current_user.id},
+    )
     db.commit()
-    return {"result": True}
+    return {"result": True, "action": "followed"}
 
 
 @router.delete("/{user_id}/follow", response_model=dict)
@@ -106,19 +105,28 @@ async def unfollow_user(
     current_user: User = Depends(get_user_from_header),
     db: Session = Depends(get_db),
 ) -> dict:
-    """Отписывается от пользователя (DELETE) в случае кнопки 'перестать читать!'"""
-    if not current_user or current_user.id == user_id:
-        return {"result": False, "error": "Cannot unfollow yourself"}
+    """
+    Отписывает *user_id* от *current_user*.
+
+    Сохраняется та же инвертированная модель:
+    - user_id — это подписчик,
+    - current_user — тот, от кого отписываются.
+    Удаляется запись, где follower_id = user_id и following_id = current_user.id.
+    """
+    if current_user.id == user_id:
+        return {"result": False, "error": "Нельзя отписаться от самого себя"}
 
     result = db.execute(
         text(
             """
-        DELETE FROM follows 
-        WHERE follower_id = :follower_id AND following_id = :user_id
-    """
+            DELETE FROM follows
+            WHERE follower_id = :follower_id AND following_id = :following_id
+        """
         ),
-        {"follower_id": current_user.id, "user_id": user_id},
+        {"follower_id": user_id, "following_id": current_user.id},
     )
-
     db.commit()
-    return {"result": result.rowcount > 0}
+
+    if result.rowcount > 0:
+        return {"result": True, "action": "unfollowed"}
+    return {"result": False, "error": "Подписка не найдена"}
