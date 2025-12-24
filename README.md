@@ -6,7 +6,7 @@ FastAPI + PostgreSQL полноценный Twitter-клон. Лента, follow
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue)](https://postgresql.org)
 [![Docker](https://img.shields.io/badge/Docker-Compose-blue)](https://docker.com)
 [![Python](https://img.shields.io/badge/Python-3.11-blueviolet)](https://python.org)
-[![Tests](https://img.shields.io/badge/Pytest-100%25-brightgreen)](https://pytest.org)
+[![Tests](https://img.shields.io/badge/Pytest-90%25-brightgreen)](https://pytest.org)
 [![Code style](https://img.shields.io/badge/code%20style-black-black)](https://black.readthedocs.io)
 [![CI](https://github.com/moskalevgeorge83-sys/my_twitter_clone/actions/workflows/ci.yml/badge.svg)](https://github.com/moskalevgeorge83-sys/my_twitter_clone/actions)
 
@@ -42,7 +42,7 @@ http://localhost:8001
 │ │ ├── db/models/ # User, Tweet, Media, Like, Follow
 │ │ ├── services/ # Бизнес-логика
 │ │ └── schemas/ # Pydantic модели
-│ └── tests/ # pytest 100% покрытие
+│ └── tests/ # pytest 90% покрытие
 ├── frontend/ # Статические файлы SPA
 │ ├── static/css/ # Twitter UI CSS/JS
 │ └── templates/ # index.html
