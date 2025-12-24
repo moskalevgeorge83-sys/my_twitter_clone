@@ -52,7 +52,7 @@ class UserService:
 
     @staticmethod
     def get_user_profile(db: Session, user_id: int) -> dict:
-        """Возвращает профиль пользователя с подписчиками/подписками."""
+        """Возвращает профиль пользователя."""
         user = db.execute(
             text("SELECT id, name FROM users WHERE id = :id"), {"id": user_id}
         ).first()
