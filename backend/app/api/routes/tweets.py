@@ -39,29 +39,36 @@ async def delete_tweet(
 
 @router.get("/", response_model=dict)
 async def get_feed(
-    current_user: User = Depends(get_user_from_header), db: Session = Depends(get_db)
-) -> dict:
-    """Возвращает ленту твитов (свои + подписки), сортировка по лайкам."""
+    current_user: User = Depends(get_user_from_header),
+    db: Session = Depends(get_db),
+):
+    """
+    Возвращает ленту твитов для current_user.
+
+    ИНВЕРТИРОВАННАЯ ЛОГИКА (согласована с /follow):
+    - Показывает твиты самого current_user + всех его подписчиков
+    - Подписчики = те пользователи, у кого в follows: follower_id = их_id, following_id = current_user.id
+    - Т.е. лента содержит твиты тех, кто "подписан на current_user" (по фронтенд-контракту)
+
+    Сортировка: сначала по количеству лайков (DESC), затем по дате создания (DESC).
+    Лимит: 20 твитов.
+    """
     if not current_user:
         return {"result": True, "tweets": []}
 
-    # 1. ID подписок
-    following_ids = (
+    # 1. Подписчики (инверсия)
+    follower_ids = (
         db.execute(
-            text(
-                """
-        SELECT following_id FROM follows WHERE follower_id = :user_id
-    """
-            ),
+            text("SELECT follower_id FROM follows WHERE following_id = :user_id"),
             {"user_id": current_user.id},
         )
         .scalars()
         .all()
     )
 
-    author_ids = [current_user.id] + following_ids
+    author_ids = [current_user.id] + follower_ids
 
-    # 2. БАЗОВЫЕ твиты по лайкам (SQLite-совместимо!)
+    # 2. Основной запрос с IN и expanding bindparam
     query = text(
         """
         SELECT t.id, t.content, t.created_at, t.author_id, u.name
@@ -81,15 +88,14 @@ async def get_feed(
     for tweet_row in tweets_base:
         tweet_id, content, created_at, author_id, author_name = tweet_row
 
-        # 3. МЕДИА
         attachments = (
             db.execute(
                 text(
                     """
-            SELECT m.file_path FROM tweet_media tm
-            JOIN medias m ON m.id = tm.media_id
-            WHERE tm.tweet_id = :tweet_id
-        """
+                SELECT m.file_path FROM tweet_media tm
+                JOIN medias m ON m.id = tm.media_id
+                WHERE tm.tweet_id = :tweet_id
+            """
                 ),
                 {"tweet_id": tweet_id},
             )
@@ -97,14 +103,14 @@ async def get_feed(
             .all()
         )
 
-        # 4. ЛАЙКИ (массив пользователей!)
         likes = db.execute(
             text(
                 """
-            SELECT l.user_id, u.name FROM likes l
-            JOIN users u ON u.id = l.user_id
-            WHERE l.tweet_id = :tweet_id
-        """
+                SELECT l.user_id, u.name 
+                FROM likes l
+                JOIN users u ON u.id = l.user_id
+                WHERE l.tweet_id = :tweet_id
+            """
             ),
             {"tweet_id": tweet_id},
         ).fetchall()
@@ -115,7 +121,7 @@ async def get_feed(
                 "content": content,
                 "attachments": list(attachments),
                 "author": {"id": author_id, "name": author_name},
-                "likes": [{"user_id": like[0], "name": like[1]} for like in likes],
+                "likes": [{"user_id": x[0], "name": x[1]} for x in likes],
             }
         )
 
