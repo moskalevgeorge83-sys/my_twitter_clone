@@ -83,20 +83,35 @@ class TweetService:
 
     @staticmethod
     def get_feed(db: Session, user_id: int, limit: int = 20) -> list[Tweet]:
-        """Возвращает ленту твитов (свои + подписки), ORM версия."""
+        """
+        Возвращает ленту твитов для пользователя user_id (ORM-версия).
+
+        ИНВЕРТИРОВАННАЯ ЛОГИКА (согласована с API /tweets и /follow):
+        - Твиты самого user_id + всех его подписчиков
+        - Подписчики = пользователи, где Follow.following_id = user_id
+                      (т.е. follower_id — это ID тех, кто подписан НА user_id)
+
+        Подзапрос формирует список подписчиков:
+        SELECT follower_id FROM follows WHERE following_id = user_id
+
+        Сортировка: по количеству лайков (DESC), затем по created_at (DESC).
+        """
         subquery = (
-            db.query(Follow.following_id)
-            .filter(Follow.follower_id == user_id)
+            db.query(Follow.follower_id)
+            .filter(Follow.following_id == user_id)
             .subquery()
         )
+
         tweets = (
             db.query(Tweet)
             .join(User)
             .outerjoin(Like, (Like.tweet_id == Tweet.id))
+            # Твиты текущего пользователя и всех, кто на него подписан
             .filter((Tweet.author_id == user_id) | (User.id.in_(subquery)))
             .group_by(Tweet.id, User.id, User.name)
-            .order_by(desc(func.count(Like.id)), Tweet.created_at)
+            .order_by(desc(func.count(Like.id)), Tweet.created_at.desc())
             .limit(limit)
             .all()
         )
+
         return tweets
